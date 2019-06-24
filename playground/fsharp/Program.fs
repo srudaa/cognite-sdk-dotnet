@@ -1,12 +1,14 @@
 ﻿// Learn more about F# at http://fsharp.org
 
 open System
+open System.Net.Http
+open System.Threading.Tasks
+
 open FsConfig
+open FSharp.Control.Tasks.V2
 
 open Cognite.Sdk
-open Cognite.Sdk.Request
 open Cognite.Sdk.Assets
-open System.Net.Http
 
 type Config = {
     [<CustomName("API_KEY")>]
@@ -15,23 +17,23 @@ type Config = {
     Project: string
 }
 
-let getAssetsExample ctx = async {
-    let! rsp = getAssets [ Limit 2 ] Async.single ctx
+let getAssetsExample ctx = task {
+    let! rsp = getAssets [ Limit 2 ] Task.FromResult ctx
 
     match rsp.Result with
     | Ok res -> printfn "%A" res
     | Error err -> printfn "Error: %A" err
 }
 
-let updateAssetsExample (ctx : HttpContext) = async {
+let updateAssetsExample (ctx : HttpContext) = task {
 
-    let! rsp = updateAssets [(84025677715833721L, [ SetName "string3" ] )] Async.single ctx
+    let! rsp = updateAssets [(84025677715833721L, [ SetName "string3" ] )] Task.FromResult ctx
     match rsp.Result with
     | Ok res -> printfn "%A" res
     | Error err -> printfn "Error: %A" err
 }
 
-let createAssetsExample ctx = async {
+let createAssetsExample ctx = task {
 
     let assets = [{
         Name = "My new asset"
@@ -59,7 +61,7 @@ let createAssetsExample ctx = async {
             yield createAssets chunk |> retry 500<ms> 5
     ]
 
-    let! rsp = request Async.single ctx
+    let! rsp = request Task.FromResult ctx
     match rsp.Result with
     | Ok res -> printfn "%A" res
     | Error err -> printfn "Error: %A" err
@@ -80,9 +82,7 @@ let main argv =
         |> addHeader ("api-key", Uri.EscapeDataString config.ApiKey)
         |> setProject (Uri.EscapeDataString config.Project)
 
-    async {
-        do! getAssetsExample ctx
-    } |> Async.RunSynchronously
+    getAssetsExample(ctx).Wait()
 
     0 // return an integer exit code
 

@@ -1,6 +1,10 @@
 module Tests.Assets
 
 open System.IO
+open System.Net.Http
+open System.Threading.Tasks
+
+open FSharp.Control.Tasks.V2
 
 open Xunit
 open Swensen.Unquote
@@ -8,12 +12,10 @@ open Newtonsoft.Json
 
 open Cognite.Sdk
 open Cognite.Sdk.Assets
-open Cognite.Sdk.Request
-open System.Net.Http
 
 
 [<Fact>]
-let ``Get asset is Ok``() = async {
+let ``Get asset is Ok``() = task {
     // Arrange
     let json = File.ReadAllText "Asset.json"
     let fetch = Fetch.fromJson json
@@ -22,7 +24,7 @@ let ``Get asset is Ok``() = async {
         |> addHeader ("api-key", "test-key")
 
     // Act
-    let! response = Internal.getAsset 42L fetch Async.single ctx
+    let! response = Internal.getAsset 42L fetch Task.FromResult ctx
 
     // Assert
     test <@ Result.isOk response.Result @>
@@ -32,7 +34,7 @@ let ``Get asset is Ok``() = async {
 }
 
 [<Fact>]
-let ``Get invalid asset is Error`` () = async {
+let ``Get invalid asset is Error`` () = task {
     // Arrenge
     let json = File.ReadAllText "InvalidAsset.json"
     let fetch = Fetch.fromJson json
@@ -43,14 +45,14 @@ let ``Get invalid asset is Error`` () = async {
 
 
     // Act
-    let! response = Internal.getAsset 42L fetch Async.single ctx
+    let! response = Internal.getAsset 42L fetch Task.FromResult ctx
 
     // Assert
     test <@ Result.isError response.Result @>
 }
 
 [<Fact>]
-let ``Get asset with extra fields is Ok`` () = async {
+let ``Get asset with extra fields is Ok`` () = task {
     // Arrenge
     let json = File.ReadAllText "AssetExtra.json"
     let fetch = Fetch.fromJson json
@@ -60,14 +62,14 @@ let ``Get asset with extra fields is Ok`` () = async {
         |> addHeader ("api-key", "test-key")
 
     // Act
-    let! response = Internal.getAsset 42L fetch Async.single ctx
+    let! response = Internal.getAsset 42L fetch Task.FromResult ctx
 
     // Assert
     test <@ Result.isOk response.Result @>
 }
 
 [<Fact>]
-let ``Get asset with missing optional fields is Ok`` () = async {
+let ``Get asset with missing optional fields is Ok`` () = task {
     // Arrenge
 
     let json = File.ReadAllText "AssetOptional.json"
@@ -78,14 +80,14 @@ let ``Get asset with missing optional fields is Ok`` () = async {
         |> addHeader ("api-key", "test-key")
 
     // Act
-    let! response = Internal.getAsset 42L fetch Async.single ctx
+    let! response = Internal.getAsset 42L fetch Task.FromResult ctx
 
     // Assert
     test <@ Result.isOk response.Result @>
 }
 
 [<Fact>]
-let ``Get assets is Ok`` () = async {
+let ``Get assets is Ok`` () = task {
     // Arrenge
     let json = File.ReadAllText "Assets.json"
     let fetch = Fetch.fromJson json
@@ -104,7 +106,7 @@ let ``Get assets is Ok`` () = async {
 
     // Act
     let! res =
-        (fetch, Async.single, ctx) |||> Internal.getAssets args
+        (fetch, Task.FromResult, ctx) |||> Internal.getAssets args
 
     // Assert
     test <@ Result.isOk res.Result @>
@@ -122,7 +124,7 @@ let ``Get assets is Ok`` () = async {
 }
 
 [<Fact>]
-let ``Create assets empty is Ok`` () = async {
+let ``Create assets empty is Ok`` () = task {
     // Arrenge
     let json = File.ReadAllText "Assets.json"
     let fetch = Fetch.fromJson json
@@ -132,7 +134,7 @@ let ``Create assets empty is Ok`` () = async {
         |> addHeader ("api-key", "test-key")
 
     // Act
-    let! res = Internal.createAssets [] fetch Async.single ctx
+    let! res = Internal.createAssets [] fetch Task.FromResult ctx
 
     // Assert
     test <@ Result.isOk res.Result @>
@@ -142,7 +144,7 @@ let ``Create assets empty is Ok`` () = async {
 }
 
 [<Fact>]
-let ``Create single asset is Ok`` () = async {
+let ``Create single asset is Ok`` () = task {
     // Arrenge
     let json = File.ReadAllText("Assets.json")
     let fetch = Fetch.fromJson json
@@ -162,7 +164,7 @@ let ``Create single asset is Ok`` () = async {
     }
 
     // Act
-    let! res = Internal.createAssets [ asset ] fetch Async.single ctx
+    let! res = Internal.createAssets [ asset ] fetch Task.FromResult ctx
 
     // Assert
     test <@ Result.isOk res.Result @>
@@ -178,7 +180,7 @@ let ``Create single asset is Ok`` () = async {
 }
 
 [<Fact>]
-let ``Update single asset with no updates is Ok`` () = async {
+let ``Update single asset with no updates is Ok`` () = task {
     // Arrenge
     let json = File.ReadAllText "Assets.json"
     let fetch = Fetch.fromJson json
@@ -188,7 +190,7 @@ let ``Update single asset with no updates is Ok`` () = async {
         |> addHeader ("api-key", "test-key")
 
     // Act
-    let! res = Internal.updateAssets [ 42L, [] ] fetch Async.single ctx
+    let! res = Internal.updateAssets [ 42L, [] ] fetch Task.FromResult ctx
 
     // Assert
     test <@ Result.isOk res.Result @>
@@ -198,7 +200,7 @@ let ``Update single asset with no updates is Ok`` () = async {
 }
 
 [<Fact>]
-let ``Update single asset with is Ok`` () = async {
+let ``Update single asset with is Ok`` () = task {
     // Arrenge
     let json = File.ReadAllText "Assets.json"
     let fetch = Fetch.fromJson json
@@ -208,7 +210,7 @@ let ``Update single asset with is Ok`` () = async {
         |> addHeader ("api-key", "test-key")
 
     // Act
-    let! res = (fetch, Async.single, ctx) |||> Internal.updateAssets  [ (42L, [
+    let! res = (fetch, Task.FromResult, ctx) |||> Internal.updateAssets  [ (42L, [
         SetName "New name"
         SetDescription (Some "New description")
         SetSource None

@@ -1,7 +1,6 @@
 namespace Tests
 
 open System
-open FSharp.Data
 open Cognite.Sdk
 
 

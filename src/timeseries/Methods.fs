@@ -1,6 +1,8 @@
 namespace Cognite.Sdk.Timeseries
 
 open System.Net.Http
+open System.Threading.Tasks
+open FSharp.Control.Tasks.V2
 
 open Cognite.Sdk
 open Cognite.Sdk.Common
@@ -21,10 +23,10 @@ module Internal =
         >=> decoder
 
     let getTimeseriesResult (query: QueryParam seq) (fetch: HttpHandler<HttpResponseMessage, string, TimeseriesResponse>) (ctx: HttpContext) =
-        let request = getTimeseries query fetch Async.single
+        let request = getTimeseries query fetch Task.FromResult
 
         request ctx
-        |> Async.map (fun ctx -> ctx.Result)
+        |> Task.map (fun ctx -> ctx.Result)
 
     let insertData (items: seq<DataPointsCreateDto>) (fetch: HttpHandler<HttpResponseMessage, string, string>) =
         let request : PointRequest = { Items = items }
@@ -38,9 +40,9 @@ module Internal =
         >=> fetch
 
     let insertDataResult (items: seq<DataPointsCreateDto>) (fetch: HttpHandler<HttpResponseMessage, string, string>) (ctx: HttpContext) =
-        let request = insertData items fetch Async.single
+        let request = insertData items fetch Task.FromResult
         request ctx
-        |> Async.map (fun ctx -> ctx.Result)
+        |> Task.map (fun ctx -> ctx.Result)
 
     let createTimeseries (items: seq<TimeseriesCreateDto>) (fetch: HttpHandler<HttpResponseMessage, string, 'a>) =
         let request : TimeseriesRequest = { Items = items }
@@ -55,8 +57,8 @@ module Internal =
         >=> decoder
 
     let createTimeseriesResult (items: seq<TimeseriesCreateDto>) (fetch: HttpHandler<HttpResponseMessage, string, TimeseriesResponse>) (ctx: HttpContext) =
-        createTimeseries items fetch Async.single ctx
-        |> Async.map (fun ctx -> ctx.Result)
+        createTimeseries items fetch Task.FromResult ctx
+        |> Task.map (fun ctx -> ctx.Result)
 
     let getTimeseriesByIds (ids: seq<int64>) (fetch: HttpHandler<HttpResponseMessage, string, 'a>) =
         let decoder = decodeResponse TimeseriesResponse.Decoder (fun res -> res.Items)
@@ -78,8 +80,8 @@ module Internal =
         >=> decoder
 
     let getTimeseriesByIdsResult (ids: seq<int64>) (fetch: HttpHandler<HttpResponseMessage, string, TimeseriesReadDto seq>) (ctx: HttpContext) =
-        getTimeseriesByIds ids fetch Async.single ctx
-        |> Async.map (fun ctx -> ctx.Result)
+        getTimeseriesByIds ids fetch Task.FromResult ctx
+        |> Task.map (fun ctx -> ctx.Result)
 
     let deleteTimeseries (name: string) (fetch: HttpHandler<HttpResponseMessage, string, string>) =
         let url = Url + sprintf "/%s" name
@@ -90,8 +92,8 @@ module Internal =
         >=> fetch
 
     let deleteTimeseriesResult (name: string) (fetch: HttpHandler<HttpResponseMessage, string, string>) (ctx: HttpContext) =
-        deleteTimeseries name fetch Async.single ctx
-        |> Async.map (fun ctx -> ctx.Result)
+        deleteTimeseries name fetch Task.FromResult ctx
+        |> Task.map (fun ctx -> ctx.Result)
 
     let getTimeseriesData (defaultArgs: QueryDataParam seq) (args: (int64*(QueryDataParam seq)) seq) (fetch: HttpHandler<HttpResponseMessage, string, 'a>) =
         let url = Url + "/data/list"
@@ -107,8 +109,8 @@ module Internal =
         >=> decoder
 
     let getTimeseriesDataResult (defaultQueryParams: QueryDataParam seq) (queryParams: (int64*(QueryDataParam seq)) seq) (fetch: HttpHandler<HttpResponseMessage, string, seq<PointResponseDataPoints>>) (ctx: HttpContext) =
-        getTimeseriesData defaultQueryParams queryParams fetch Async.single ctx
-        |> Async.map (fun ctx -> ctx.Result)
+        getTimeseriesData defaultQueryParams queryParams fetch Task.FromResult ctx
+        |> Task.map (fun ctx -> ctx.Result)
 
     let getTimeseriesLatestData (queryParams: LatestDataRequest seq) (fetch: HttpHandler<HttpResponseMessage, string, 'a>) =
         let url = Url + "/data/latest"
@@ -124,8 +126,8 @@ module Internal =
         >=> decoder
 
     let getTimeseriesLatestDataResult (queryParams: LatestDataRequest seq) (fetch: HttpHandler<HttpResponseMessage, string, seq<PointResponseDataPoints>>) (ctx: HttpContext) =
-        getTimeseriesLatestData queryParams fetch Async.single ctx
-        |> Async.map (fun ctx -> ctx.Result)
+        getTimeseriesLatestData queryParams fetch Task.FromResult ctx
+        |> Task.map (fun ctx -> ctx.Result)
 
 [<AutoOpen>]
 module Methods =

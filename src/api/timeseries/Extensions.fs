@@ -6,13 +6,12 @@ open System.Threading.Tasks;
 open System.Runtime.InteropServices
 open System.Runtime.CompilerServices
 
+open FSharp.Control.Tasks.V2
+
 open Cognite.Sdk
 open Cognite.Sdk.Api
 open Cognite.Sdk.Timeseries
 open Cognite.Sdk.Common
-open FSharp.Data
-
-
 
 [<Extension>]
 type Timeseries =
@@ -257,7 +256,7 @@ type ClientTimeseriesExtensions =
     /// <returns>Http status code.</returns>
     [<Extension>]
     static member GetTimeseriesDataAsync (this: Client) (defaultQuery: QueryData) (query: Tuple<int64, QueryData> seq) : Task<seq<PointResponseDataPoints>> =
-        let worker () : Async<seq<PointResponseDataPoints>> = async {
+        task {
             let defaultQuery' = defaultQuery.Query
             let query' = query |> Seq.map (fun (id, query) -> (id, query.Query))
             let! result = Internal.getTimeseriesDataResult defaultQuery' query' fetch this.Ctx
@@ -268,8 +267,6 @@ type ClientTimeseriesExtensions =
                return raise (Error.error2Exception error)
         }
 
-        worker () |> Async.StartAsTask
-
     /// <summary>
     /// Retrieves the single latest data point in a time series.
     /// </summary>
@@ -278,7 +275,7 @@ type ClientTimeseriesExtensions =
     /// <returns>Http status code.</returns>
     [<Extension>]
     static member GetTimeseriesLatestDataAsync (this: Client) (queryParams: QueryDataLatest seq) : Task<seq<PointResponseDataPoints>> =
-        let worker () : Async<seq<PointResponseDataPoints>> = async {
+        task {
             let query = queryParams |> Seq.map (fun p -> p.Latest)
             let! result = Internal.getTimeseriesLatestDataResult query fetch this.Ctx
             match result with
@@ -287,8 +284,6 @@ type ClientTimeseriesExtensions =
             | Error error ->
                return raise (Error.error2Exception error)
         }
-
-        worker () |> Async.StartAsTask
 
     /// <summary>
     /// Insert data into named time series.
@@ -321,7 +316,7 @@ type ClientTimeseriesExtensions =
                 }
             ) items
 
-        let worker () : Async<bool> = async {
+        task {
             let! result = Internal.insertDataResult items' fetch this.Ctx
             match result with
             | Ok response ->
@@ -330,8 +325,6 @@ type ClientTimeseriesExtensions =
                return raise (Error.error2Exception error)
         }
 
-        worker () |> Async.StartAsTask
-
     /// <summary>
     /// Create a new timeseries.
     /// </summary>
@@ -339,7 +332,7 @@ type ClientTimeseriesExtensions =
     /// <returns>Http status code.</returns>
     [<Extension>]
     static member CreateTimeseriesAsync (this: Client) (items: seq<TimeseriesCreateDto>) : Task<TimeseriesResponse> =
-        let worker () : Async<TimeseriesResponse> = async {
+        task {
             let! result = Internal.createTimeseriesResult items fetch this.Ctx
             match result with
             | Ok response ->
@@ -348,8 +341,6 @@ type ClientTimeseriesExtensions =
                return raise (Error.error2Exception error)
         }
 
-        worker () |> Async.StartAsTask
-
     /// <summary>
     /// Get timeseries
     /// </summary>
@@ -357,7 +348,7 @@ type ClientTimeseriesExtensions =
     /// <returns>The timeseries with the given id.</returns>
     [<Extension>]
     static member GetTimeseriesAsync (this: Client) (queryParams: Query) : Task<TimeseriesResponse> =
-        let worker () : Async<TimeseriesResponse> = async {
+        task {
             let! result = Internal.getTimeseriesResult queryParams.Params fetch this.Ctx
 
             match result with
@@ -367,8 +358,6 @@ type ClientTimeseriesExtensions =
                return raise (Error.error2Exception error)
         }
 
-        worker () |> Async.StartAsTask
-
     /// <summary>
     /// Get timeseries with given id.
     /// </summary>
@@ -376,7 +365,7 @@ type ClientTimeseriesExtensions =
     /// <returns>The timeseries with the given id.</returns>
     [<Extension>]
     static member GetTimeseriesByIdsAsync (this: Client) (ids: seq<int64>) : Task<seq<TimeseriesReadDto>> =
-        let worker () : Async<seq<TimeseriesReadDto>> = async {
+        task {
             let! result = Internal.getTimeseriesByIdsResult ids fetch this.Ctx
 
             match result with
@@ -386,8 +375,6 @@ type ClientTimeseriesExtensions =
                return raise (Error.error2Exception error)
         }
 
-        worker () |> Async.StartAsTask
-
     /// <summary>
     /// Delete timeseries.
     /// </summary>
@@ -395,7 +382,7 @@ type ClientTimeseriesExtensions =
     /// <returns>List of created timeseries.</returns>
     [<Extension>]
     static member DeleteTimeseriesAsync (this: Client) (name: string) : Task<bool> =
-        let worker () : Async<bool> = async {
+        task {
             let! result = Internal.deleteTimeseriesResult name fetch this.Ctx
             match result with
             | Ok response ->
@@ -403,5 +390,3 @@ type ClientTimeseriesExtensions =
             | Error error ->
                return raise (Error.error2Exception error)
         }
-
-        worker () |> Async.StartAsTask

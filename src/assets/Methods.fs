@@ -2,6 +2,9 @@ namespace Cognite.Sdk.Assets
 
 open System.Net
 open System.Net.Http
+open System.Threading.Tasks
+
+open FSharp.Control.Tasks.V2
 
 open Cognite.Sdk
 open Cognite.Sdk.Assets
@@ -23,8 +26,8 @@ module Internal =
         >=> decoder
 
     let getAssetsResult (args: GetParams seq) (fetch: HttpHandler<HttpResponseMessage, string, AssetResponse>) (ctx: HttpContext) =
-        getAssets args fetch Async.single ctx
-        |> Async.map (fun decoded -> decoded.Result)
+        getAssets args fetch Task.FromResult ctx
+        |> Task.map (fun decoded -> decoded.Result)
 
     let getAssetsByIds (ids: Identity seq) (fetch: HttpHandler<HttpResponseMessage, string, AssetResponse>) =
         let decoder = decodeResponse AssetResponse.Decoder id
@@ -39,8 +42,8 @@ module Internal =
         >=> decoder
 
     let getAssetsByIdsResult (ids: Identity seq)  (fetch: HttpHandler<HttpResponseMessage, string, AssetResponse>) (ctx: HttpContext) =
-        getAssetsByIds ids fetch Async.single ctx
-        |> Async.map (fun decoded -> decoded.Result)
+        getAssetsByIds ids fetch Task.FromResult ctx
+        |> Task.map (fun decoded -> decoded.Result)
 
     let getAsset (assetId: int64) (fetch: HttpHandler<HttpResponseMessage, string, 'a>) =
         let decoder = decodeResponse AssetReadDto.Decoder id
@@ -53,8 +56,8 @@ module Internal =
         >=> decoder
 
     let getAssetResult (assetId: int64) (fetch: HttpHandler<HttpResponseMessage, string, AssetReadDto>) (ctx: HttpContext) =
-        getAsset assetId fetch Async.single ctx
-        |> Async.map (fun decoded -> decoded.Result)
+        getAsset assetId fetch Task.FromResult ctx
+        |> Task.map (fun decoded -> decoded.Result)
 
     let createAssets (assets: AssetCreateDto seq) (fetch: HttpHandler<HttpResponseMessage,string,'a>)  =
         let decoder = decodeResponse AssetResponse.Decoder (fun res -> res.Items)
@@ -69,8 +72,8 @@ module Internal =
         >=> decoder
 
     let createAssetsResult (assets: AssetCreateDto seq) (fetch: HttpHandler<HttpResponseMessage, string, seq<AssetReadDto>>) (ctx: HttpContext) =
-        createAssets assets fetch Async.single ctx
-        |> Async.map (fun context -> context.Result)
+        createAssets assets fetch Task.FromResult ctx
+        |> Task.map (fun context -> context.Result)
 
     let deleteAssets (assets: Identity seq) (fetch: HttpHandler<HttpResponseMessage, string, 'a>) =
         let request : AssetsDeleteRequest = { Items = assets }
@@ -83,8 +86,8 @@ module Internal =
         >=> fetch
 
     let deleteAssetsResult<'a> (assets: Identity seq) (fetch: HttpHandler<HttpResponseMessage, string, string>) (ctx: HttpContext) =
-        deleteAssets assets fetch Async.single ctx
-        |> Async.map (fun ctx -> ctx.Result)
+        deleteAssets assets fetch Task.FromResult ctx
+        |> Task.map (fun ctx -> ctx.Result)
 
     let updateAssets (args: (int64*UpdateParams list) list) (fetch: HttpHandler<HttpResponseMessage, string, 'a>) =
         let request : AssetsUpdateRequest = {
@@ -104,8 +107,8 @@ module Internal =
         >=> fetch
 
     let updateAssetsResult (args: (int64*UpdateParams list) list) (fetch: HttpHandler<HttpResponseMessage, string, string>) (ctx: HttpContext) =
-        updateAssets args fetch Async.single ctx
-        |> Async.map (fun ctx -> ctx.Result)
+        updateAssets args fetch Task.FromResult ctx
+        |> Task.map (fun ctx -> ctx.Result)
 
 [<AutoOpen>]
 module Methods =
@@ -126,7 +129,7 @@ module Methods =
     /// **Output Type**
     ///   * `Async<Result<Response,exn>>`
     ///
-    let getAssets (args: seq<GetParams>) (next: NextHandler<AssetResponse,'a>) (ctx: HttpContext) : Async<Context<'a>> =
+    let getAssets (args: seq<GetParams>) (next: NextHandler<AssetResponse,'a>) (ctx: HttpContext) : Task<Context<'a>> =
         Internal.getAssets args fetch next ctx
 
     //let searchAssets (args: )
@@ -142,7 +145,7 @@ module Methods =
     /// **Output Type**
     ///   * `Async<Result<Response,exn>>`
     ///
-    let getAsset (assetId: int64) (next: NextHandler<AssetReadDto,'a>) (ctx: HttpContext) : Async<Context<'a>> =
+    let getAsset (assetId: int64) (next: NextHandler<AssetReadDto,'a>) (ctx: HttpContext) : Task<Context<'a>> =
         Internal.getAsset assetId fetch next ctx
 
     /// **Description**

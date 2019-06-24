@@ -2,6 +2,9 @@ module Tests.Timeseries
 
 open System
 open System.IO
+open System.Threading.Tasks
+
+open FSharp.Control.Tasks.V2
 
 open Xunit
 open Swensen.Unquote
@@ -12,7 +15,7 @@ open Cognite.Sdk.Request
 
 
 [<Fact>]
-let ``Create timeseries is Ok`` () = async {
+let ``Create timeseries is Ok`` () = task {
     // Arrenge
     let json = File.ReadAllText "Timeseries.json" // FIXME:
     let fetch = Fetch.fromJson json
@@ -22,7 +25,7 @@ let ``Create timeseries is Ok`` () = async {
         |> addHeader ("api-key", "test-key")
 
     // Act
-    let! res = Internal.createTimeseries [] fetch Async.single ctx
+    let! res = Internal.createTimeseries [] fetch Task.FromResult ctx
 
     // Assert
     test <@ Result.isOk res.Result @>
@@ -32,7 +35,7 @@ let ``Create timeseries is Ok`` () = async {
 }
 
 [<Fact>]
-let ``Get timeseries by ids is Ok`` () = async {
+let ``Get timeseries by ids is Ok`` () = task {
     // Arrenge
     let json = File.ReadAllText "Timeseries.json"
     let fetch = Fetch.fromJson json
@@ -42,7 +45,7 @@ let ``Get timeseries by ids is Ok`` () = async {
         |> addHeader ("api-key", "test-key")
 
     // Act
-    let! res = Internal.getTimeseriesByIds [ 0L ] fetch Async.single ctx
+    let! res = Internal.getTimeseriesByIds [ 0L ] fetch Task.FromResult ctx
 
     // Assert
     test <@ Result.isOk res.Result @>
@@ -52,7 +55,7 @@ let ``Get timeseries by ids is Ok`` () = async {
 }
 
 [<Fact>]
-let ``Delete timeseries is Ok`` () = async {
+let ``Delete timeseries is Ok`` () = task {
     // Arrenge
     let json = File.ReadAllText "Timeseries.json"
     let fetch = Fetch.fromJson json
@@ -62,7 +65,7 @@ let ``Delete timeseries is Ok`` () = async {
         |> addHeader ("api-key", "test-key")
 
     // Act
-    let! res = Internal.deleteTimeseries "erase" fetch Async.single ctx
+    let! res = Internal.deleteTimeseries "erase" fetch Task.FromResult ctx
 
     // Assert
     test <@ Result.isOk res.Result @>

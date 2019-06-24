@@ -1,17 +1,20 @@
 namespace Cognite.Sdk
 
 open System
-open System.Net
 open System.Net.Http
-open Microsoft.FSharp.Data.UnitSystems.SI
 open System.Text
+open System.Threading.Tasks
 open System.Web
+
+open Microsoft.FSharp.Data.UnitSystems.SI
+
+open FSharp.Control.Tasks.V2
 
 [<Measure>] type ms
 
-type NextHandler<'a, 'b> = Context<'a> -> Async<Context<'b>>
+type NextHandler<'a, 'b> = Context<'a> -> Task<Context<'b>>
 
-type HttpHandler<'a, 'b, 'c> = NextHandler<'b, 'c> -> Context<'a> -> Async<Context<'c>>
+type HttpHandler<'a, 'b, 'c> = NextHandler<'b, 'c> -> Context<'a> -> Task<Context<'c>>
 
 type HttpHandler<'a, 'b> = HttpHandler<'a, 'a, 'b>
 
@@ -118,39 +121,38 @@ module Handler =
     /// **Output Type**
     ///   * `Async<Context<'a>>`
     ///
-    let rec retry (initialDelay: int<ms>) (maxRetries : int) (handler: HttpHandler<'a,'b,'c>) (next: NextHandler<'b,'c>) (ctx: Context<'a>) : Async<Context<'c>> = async {
-        // https://github.com/cognitedata/cdp-spark-datasource/blob/master/src/main/scala/com/cognite/spark/datasource/CdpConnector.scala#L170
+    let rec retry (initialDelay: int<ms>) (maxRetries : int) (handler: HttpHandler<'a,'b,'c>) (next: NextHandler<'b,'c>) (ctx: Context<'a>) : Task<Context<'c>> =
+        task {
+            // https://github.com/cognitedata/cdp-spark-datasource/blob/master/src/main/scala/com/cognite/spark/datasource/CdpConnector.scala#L170
 
-        let exponentialDelay = min (secondsInMilliseconds * DefaultMaxBackoffDelay / 2) (initialDelay * 2)
-        let randomDelayScale = min (secondsInMilliseconds * DefaultMaxBackoffDelay / 2) (initialDelay * 2)
-        let nextDelay = rand.Next(int randomDelayScale) * 1<ms> + exponentialDelay
+            let exponentialDelay = min (secondsInMilliseconds * DefaultMaxBackoffDelay / 2) (initialDelay * 2)
+            let randomDelayScale = min (secondsInMilliseconds * DefaultMaxBackoffDelay / 2) (initialDelay * 2)
+            let nextDelay = rand.Next(int randomDelayScale) * 1<ms> + exponentialDelay
 
+            let! ctx' = handler next ctx
 
-
-        let! ctx' = handler next ctx
-
-        match ctx'.Result with
-        | Ok _ -> return ctx'
-        | Error err ->
-            match err with
-            | ErrorResponse httpResponse ->
-                if shouldRetry (int httpResponse.StatusCode) && maxRetries > 0 then
-                    do! int initialDelay |> Async.Sleep
-                    return! retry nextDelay (maxRetries - 1) handler next ctx
-                else
-                    return ctx'
-            | RequestException error ->
-                match error with
-                | :? System.Net.WebException as ex ->
-                    if maxRetries > 0 then
+            match ctx'.Result with
+            | Ok _ -> return ctx'
+            | Error err ->
+                match err with
+                | ErrorResponse httpResponse ->
+                    if shouldRetry (int httpResponse.StatusCode) && maxRetries > 0 then
                         do! int initialDelay |> Async.Sleep
+                        return! retry nextDelay (maxRetries - 1) handler next ctx
+                    else
+                        return ctx'
+                | RequestException error ->
+                    match error with
+                    | :? System.Net.WebException as ex ->
+                        if maxRetries > 0 then
+                            do! int initialDelay |> Async.Sleep
 
-                    return! retry nextDelay (maxRetries - 1) handler next ctx
+                        return! retry nextDelay (maxRetries - 1) handler next ctx
+                    | _ ->
+                        return ctx'
                 | _ ->
                     return ctx'
-            | _ ->
-                return ctx'
-    }
+        }
 
     /// **Description**
     ///
@@ -165,14 +167,15 @@ module Handler =
     ///
     /// **Exceptions**
     ///
-    let concurrent (handlers : HttpHandler<'a, 'b, 'b> seq) (next: NextHandler<'b list, 'c>) (ctx: Context<'a>) : Async<Context<'c>> = async {
-        let! res =
-            Seq.map (fun handler -> handler Async.single ctx) handlers
-            |> Async.Parallel
-            |> Async.map List.ofArray
+    let concurrent (handlers : HttpHandler<'a, 'b, 'b> seq) (next: NextHandler<'b list, 'c>) (ctx: Context<'a>) : Task<Context<'c>> =
+        task {
+            let! res =
+                Seq.map (fun handler -> handler Task.FromResult ctx) handlers
+                |> Task.WhenAll
+                |> Task.map List.ofArray
 
-        return! next (res |> sequenceContext)
-    }
+            return! next (res |> sequenceContext)
+        }
 
     /// **Description**
     ///
@@ -228,8 +231,8 @@ module Handler =
 
 
     /// A request function for fetching from the Cognite API.
-    let fetch<'a> (next: NextHandler<string,'a>) (ctx: HttpContext) : Async<Context<'a>> =
-        async {
+    let fetch<'a> (next: NextHandler<string,'a>) (ctx: HttpContext) : Task<Context<'a>> =
+        task {
             let res = ctx.Request.Resource
             let query = ctx.Request.Query
 

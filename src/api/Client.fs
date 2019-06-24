@@ -1,8 +1,6 @@
 namespace Cognite.Sdk.Api
 
 open Cognite.Sdk
-open Cognite.Sdk.Request
-open Microsoft.Extensions.DependencyInjection
 open System.Net.Http
 
 
