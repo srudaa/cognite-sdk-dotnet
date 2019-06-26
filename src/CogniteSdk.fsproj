@@ -22,8 +22,11 @@
     <Compile Include="assets/Json.fs" />
     <Compile Include="assets/Methods.fs" />
     <Compile Include="api/Client.fs" />
+
     <Compile Include="assets/GetAssets.fs" />
     <Compile Include="assets/SearchAssets.fs" />
+    <!-- <Compile Include="timeseries/GetTimeseriesAggregateData.fs" /> -->
+
     <Compile Include="api/Assets.fs" />
     <Compile Include="api/timeseries/Model.fs" />
     <Compile Include="api/timeseries/Extensions.fs" />

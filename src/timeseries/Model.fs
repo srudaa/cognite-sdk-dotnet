@@ -16,20 +16,6 @@ type PointRequest = {
     Items: DataPointsCreateDto seq
 }
 
-type AggregateDataPointReadDto = {
-    TimeStamp: int64
-    Average: float option
-    Max: float option
-    Min: float option
-    Count: int option
-    Sum: float option
-    Interpolation: float option
-    StepInterpolation: float option
-    ContinousVariance: float option
-    DiscreteVariance: float option
-    TotalVariation: float option
-}
-
 type PointResponseDataPoints = {
     Id: int64
     ExternalId: string option
@@ -37,18 +23,9 @@ type PointResponseDataPoints = {
     DataPoints: DataPointDto seq
 }
 
-type PointResponseAggregateDataPoints = {
-    Id: int64
-    ExternalId: string option
-    DataPoints: AggregateDataPointReadDto seq
-}
 
 type PointResponse = {
     Items: PointResponseDataPoints seq
-}
-
-type AggregatePointResponse = {
-    Items: PointResponseAggregateDataPoints seq
 }
 
 
